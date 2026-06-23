@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import axios from 'axios'
-import './css/app.css'
+import '../css/app.css'
 
 import Layout from './layouts/Layout'
 import Login from './pages/Login'
