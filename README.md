@@ -38,8 +38,8 @@ OS:        Ubuntu 24.04 LTS
 ## Local Development
 
 ```bash
-git clone https://github.com/Saviour26/thirdsan-panel
-cd thirdsan-panel
+git clone https://github.com/Saviour26/panel.thirdsan
+cd panel.thirdsan
 
 # Backend
 composer install
@@ -60,7 +60,7 @@ Run once, as root, on a fresh Ubuntu 24.04 VPS:
 
 ```bash
 ssh root@82.208.22.164
-curl -fsSL https://raw.githubusercontent.com/Saviour26/thirdsan-panel/main/deploy/bootstrap-vps.sh -o bootstrap-vps.sh
+curl -fsSL https://raw.githubusercontent.com/Saviour26/panel.thirdsan/main/deploy/bootstrap-vps.sh -o bootstrap-vps.sh
 bash bootstrap-vps.sh
 ```
 

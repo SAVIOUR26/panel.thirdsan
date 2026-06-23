@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-REPO_URL="https://github.com/Saviour26/thirdsan-panel.git"
+REPO_URL="https://github.com/Saviour26/panel.thirdsan.git"
 DEPLOY_PATH="/opt/thirdsan/panel"
 DEPLOY_USER="deploy"
 DOMAIN="panel.thirdsan.com"
