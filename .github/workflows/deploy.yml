@@ -3,15 +3,22 @@ name: Deploy Thirdsan Panel
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
 jobs:
-  deploy:
-    name: Build & Deploy to VPS
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo, sqlite3, tokenizer, xml, ctype, json
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -19,14 +26,8 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, bcmath, pdo, tokenizer, xml, ctype, json
-
       - name: Install PHP dependencies
-        run: composer install --no-dev --optimize-autoloader --no-interaction
+        run: composer install --prefer-dist --no-interaction
 
       - name: Install Node dependencies
         run: npm ci
@@ -34,41 +35,48 @@ jobs:
       - name: Build React frontend
         run: npm run build
 
-      - name: Deploy to Thirdsan VPS
+      - name: Verify the app boots
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          sed -i "s#^DB_DATABASE=.*#DB_DATABASE=${PWD}/database/panel.sqlite#" .env
+          touch database/panel.sqlite
+          php artisan migrate --force
+          php artisan route:list
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
-          username: deploy
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            echo "🚀 Starting Thirdsan Panel deployment..."
+          envs: PANEL_ADMIN_EMAIL,PANEL_ADMIN_NAME,PANEL_ADMIN_PASSWORD
+          script: bash /opt/thirdsan/panel/deploy/deploy.sh
+        env:
+          PANEL_ADMIN_EMAIL: ${{ secrets.PANEL_ADMIN_EMAIL }}
+          PANEL_ADMIN_NAME: ${{ secrets.PANEL_ADMIN_NAME }}
+          PANEL_ADMIN_PASSWORD: ${{ secrets.PANEL_ADMIN_PASSWORD }}
 
-            # Pull latest code
-            cd /opt/thirdsan/panel
-            git pull origin main
-
-            # Install/update PHP deps
-            composer install --no-dev --optimize-autoloader --no-interaction
-
-            # Install and build frontend
-            npm ci
-            npm run build
-
-            # Run migrations
-            php artisan migrate --force
-
-            # Clear and cache config
-            php artisan config:cache
-            php artisan route:cache
-            php artisan view:cache
-
-            # Restart PHP-FPM
-            sudo systemctl reload php8.2-fpm
-
-            echo "✅ Thirdsan Panel deployed successfully!"
-            echo "🌐 Live at https://panel.thirdsan.com"
-
-      - name: Notify deployment
-        if: always()
+      - name: Health check
         run: |
-          echo "Deployment status: ${{ job.status }}"
+          for i in 1 2 3 4 5; do
+            status=$(curl -s -o /dev/null -w "%{http_code}" https://panel.thirdsan.com/up || echo 000)
+            if [ "$status" = "200" ]; then
+              echo "panel.thirdsan.com is up (HTTP $status)"
+              exit 0
+            fi
+            echo "Attempt $i: got HTTP $status, retrying in 5s..."
+            sleep 5
+          done
+          echo "panel.thirdsan.com did not return 200 after deploy"
+          exit 1

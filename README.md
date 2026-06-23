@@ -54,25 +54,45 @@ npm run dev
 
 ## Deployment
 
-Deployment is automatic via GitHub Actions on every push to `main`.
+### First-time VPS setup
+
+Run once, as root, on a fresh Ubuntu 24.04 VPS:
+
+```bash
+ssh root@82.208.22.164
+curl -fsSL https://raw.githubusercontent.com/Saviour26/thirdsan-panel/main/deploy/bootstrap-vps.sh -o bootstrap-vps.sh
+bash bootstrap-vps.sh
+```
+
+This installs PHP 8.2 + php8.2-fpm, Composer, Node 20, clones the repo to
+`/opt/thirdsan/panel`, installs the nginx vhost, and runs the first deploy.
+Issue an SSL cert afterwards with `certbot --nginx -d panel.thirdsan.com`.
+
+### Ongoing deploys
+
+Every push to `main` runs `.github/workflows/deploy.yml`, which builds and
+tests the app on the runner, then SSHes into the VPS and runs
+`deploy/deploy.sh` (git pull, composer/npm install, migrate, cache, idempotent
+admin user, permissions, reload php-fpm/nginx), followed by a health check
+against `https://panel.thirdsan.com/up`.
 
 ### Required GitHub Secrets
 
 | Secret | Value |
 |---|---|
 | `VPS_HOST` | `82.208.22.164` |
-| `VPS_SSH_KEY` | Private SSH key for `deploy` user |
+| `VPS_USER` | `deploy` |
+| `VPS_SSH_KEY` | Private SSH key for the `deploy` user |
+| `PANEL_ADMIN_EMAIL` | `saviour@thirdsan.com` |
+| `PANEL_ADMIN_NAME` | `Saviour` |
+| `PANEL_ADMIN_PASSWORD` | Admin login password |
 
 ### Manual Deploy
 
 ```bash
 # On VPS as deploy user
-cd /opt/thirdsan/panel
-git pull origin main
-composer install --no-dev
-npm ci && npm run build
-php artisan migrate --force
-php artisan config:cache
+export PANEL_ADMIN_EMAIL=saviour@thirdsan.com PANEL_ADMIN_NAME=Saviour PANEL_ADMIN_PASSWORD=...
+bash /opt/thirdsan/panel/deploy/deploy.sh
 ```
 
 ## Adding New Services
