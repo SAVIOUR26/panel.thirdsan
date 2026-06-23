@@ -1,0 +1,74 @@
+name: Deploy Thirdsan Panel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Build & Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, pdo, tokenizer, xml, ctype, json
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build React frontend
+        run: npm run build
+
+      - name: Deploy to Thirdsan VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            echo "🚀 Starting Thirdsan Panel deployment..."
+
+            # Pull latest code
+            cd /opt/thirdsan/panel
+            git pull origin main
+
+            # Install/update PHP deps
+            composer install --no-dev --optimize-autoloader --no-interaction
+
+            # Install and build frontend
+            npm ci
+            npm run build
+
+            # Run migrations
+            php artisan migrate --force
+
+            # Clear and cache config
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Restart PHP-FPM
+            sudo systemctl reload php8.2-fpm
+
+            echo "✅ Thirdsan Panel deployed successfully!"
+            echo "🌐 Live at https://panel.thirdsan.com"
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Deployment status: ${{ job.status }}"
