@@ -54,7 +54,7 @@ chmod 664 database/panel.sqlite
 chmod 775 database
 
 echo "==> Reloading services"
-sudo systemctl reload php8.2-fpm
+sudo systemctl reload php8.4-fpm
 sudo systemctl reload nginx
 
 echo "==> Deploy complete"
