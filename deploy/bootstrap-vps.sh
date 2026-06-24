@@ -14,15 +14,15 @@ DEPLOY_PATH="/opt/thirdsan/panel"
 DEPLOY_USER="deploy"
 DOMAIN="panel.thirdsan.com"
 
-echo "==> Installing PHP 8.2, php-fpm and required extensions"
+echo "==> Installing PHP 8.4, php-fpm and required extensions"
 apt-get update -y
 apt-get install -y software-properties-common ca-certificates lsb-release apt-transport-https
 add-apt-repository -y ppa:ondrej/php
 apt-get update -y
 apt-get install -y \
-    php8.2 php8.2-fpm php8.2-cli php8.2-common \
-    php8.2-mbstring php8.2-xml php8.2-bcmath php8.2-curl \
-    php8.2-sqlite3 php8.2-zip php8.2-gd \
+    php8.4 php8.4-fpm php8.4-cli php8.4-common \
+    php8.4-mbstring php8.4-xml php8.4-bcmath php8.4-curl \
+    php8.4-sqlite3 php8.4-zip php8.4-gd \
     git unzip curl nginx
 
 echo "==> Installing Composer"
@@ -54,7 +54,7 @@ chown -R "$DEPLOY_USER":"$DEPLOY_USER" "$DEPLOY_PATH"
 
 echo "==> Allowing ${DEPLOY_USER} to reload php-fpm/nginx without a password"
 cat > /etc/sudoers.d/thirdsan-deploy <<EOF
-${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl reload php8.2-fpm, /bin/systemctl reload nginx
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl reload php8.4-fpm, /bin/systemctl reload nginx
 EOF
 chmod 440 /etc/sudoers.d/thirdsan-deploy
 

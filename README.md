@@ -13,7 +13,7 @@ A professional server management panel built for Thirdsan Enterprises VPS infras
 
 ## Tech Stack
 
-- **Backend:** Laravel 11 (PHP 8.2) + Sanctum API auth
+- **Backend:** Laravel 11 (PHP 8.4) + Sanctum API auth
 - **Frontend:** React 18 + React Router + TanStack Query + Recharts
 - **Styling:** Custom CSS design system (no framework)
 - **Database:** SQLite (lightweight, zero config)
@@ -64,7 +64,7 @@ curl -fsSL https://raw.githubusercontent.com/Saviour26/panel.thirdsan/main/deplo
 bash bootstrap-vps.sh
 ```
 
-This installs PHP 8.2 + php8.2-fpm, Composer, Node 20, clones the repo to
+This installs PHP 8.4 + php8.4-fpm, Composer, Node 20, clones the repo to
 `/opt/thirdsan/panel`, installs the nginx vhost, and runs the first deploy.
 Issue an SSL cert afterwards with `certbot --nginx -d panel.thirdsan.com`.
 
